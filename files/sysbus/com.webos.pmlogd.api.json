@@ -1,0 +1,7 @@
+{
+	"system.debug" : [
+		"com.webos.pmlogd/backuplogs",
+		"com.webos.pmlogd/forcerotate",
+		"com.webos.pmlogd/subscribeOnRotations"
+	]
+}

@@ -1,0 +1,12 @@
+{
+	"exeName":"@WEBOS_INSTALL_SBINDIR@/PmLogDaemon",
+	"type": "regular",
+	"allowedNames": ["com.webos.pmlogd"],
+	"permissions":
+	[
+		{
+			"service":"com.webos.pmlogd",
+			"outbound":["com.webos.service.config", "com.webos.settingsservice"]
+		}
+	]
+}

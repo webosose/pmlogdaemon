@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=com.webos.pmlogd
+Exec=@WEBOS_INSTALL_SBINDIR@/PmLogDaemon
+Type=static
