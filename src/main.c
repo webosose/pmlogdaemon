@@ -1706,18 +1706,13 @@ static void LogMessage(int pri, const char *msg)
 
 	if (msgNext != NULL)
 	{
-	    /* integrate into msgProgram */
-            size = sizeof(msgProgram) - msgProgramNameLen + 1;
-            if (size > MAX_MSG_LEN)
-            {
-                size = sizeof(msgProgram); //size--
-            }
-	    snprintf(msgProgram + msgProgramNameLen + 1,
-		     size, "%.*s",
-		     (int)(msgNext - msgCurr), msgCurr);
+		/* integrate into msgProgram */
+		snprintf(msgProgram + msgProgramNameLen + 1,
+			sizeof(msgProgram) - (msgProgramNameLen + 1), "%.*s",
+			(int)(msgNext - msgCurr), msgCurr);
 
-	    msgLeft = msgNext;
-	    msgCurr = msgNext;
+		msgLeft = msgNext;
+		msgCurr = msgNext;
 	}
 
 	/* Recognization for PMLOG_IDENTIFIER*/
