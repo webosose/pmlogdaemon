@@ -45,6 +45,7 @@
 #include <linux/inotify.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <sys/syslog.h>
 #include <sys/time.h>
@@ -2593,6 +2594,9 @@ static gboolean InitializeHubStatusReader(gpointer userdata)
         close(fd);
         return FALSE;
     }
+
+    memset(buffer, 0, sizeof(buffer));
+
     length = read( fd, buffer, EVENT_BUF_LEN );
 
     if (length <= 0)
@@ -2604,6 +2608,11 @@ static gboolean InitializeHubStatusReader(gpointer userdata)
     {
         while (i >= 0 && i < length)
         {
+            if ((i + EVENT_SIZE) >= length) {
+                retVal = FALSE;
+                break;
+            }
+
             struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];
             if ((event->len) && (event->mask & IN_CREATE))
             {
