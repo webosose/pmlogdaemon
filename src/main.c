@@ -46,6 +46,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <sys/syslog.h>
 #include <sys/time.h>
@@ -2606,9 +2607,9 @@ static gboolean InitializeHubStatusReader(gpointer userdata)
     }
     else
     {
-        while (i >= 0 && i < length)
+        while (i < length)
         {
-            if ((i + EVENT_SIZE) >= length) {
+            if (((i + EVENT_SIZE-1) >= length) || ((i + EVENT_SIZE-1) >= EVENT_BUF_LEN)) {
                 retVal = FALSE;
                 break;
             }

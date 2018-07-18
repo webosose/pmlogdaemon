@@ -478,7 +478,7 @@ static bool ParseContextData(
 		 * token is null-terminated string
 		 * token is not longer then PMLOG_PROGRAM_MAX_NAME_LENGTH
 		 */
-		strcpy(parseRuleP->program, token);
+		strncpy(parseRuleP->program, token, sizeof(token));
 	}
 	else
 	{
