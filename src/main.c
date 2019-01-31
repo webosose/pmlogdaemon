@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 LG Electronics, Inc.
+// Copyright (c) 2007-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -2215,15 +2215,13 @@ static bool backup_logs_ls(LSHandle *lsHandle, LSMessage *lsMessage, void *wd)
 {
 	LSMessageRef(lsMessage);
 
-	bool          ret_val;
+	bool          ret_val = true;
 	const char    *tarball = WEBOS_INSTALL_LOCALSTATEDIR "/spool/rdxd/previous_boot_logs.tar.gz";
 	const char    *src_path = WEBOS_INSTALL_LOCALSTATEDIR;
 	const char    *log_files = "`find log/ -type f -maxdepth 1`";
 	const char    *tar_options = "--absolute-names";
 	jvalue_ref    reply = NULL;
-	jschema_ref   response_schema;
-
-	response_schema = jschema_parse(j_cstr_to_buffer("{}"), DOMOPT_NOOPT, NULL);
+	jschema_ref   response_schema = NULL;
 
 	reply = jobject_create();
 
@@ -2241,6 +2239,10 @@ static bool backup_logs_ls(LSHandle *lsHandle, LSMessage *lsMessage, void *wd)
 		jobject_put(reply, J_CSTR_TO_JVAL("returnValue"), jboolean_create(false));
 	}
 
+    response_schema = jschema_parse(j_cstr_to_buffer("{}"), DOMOPT_NOOPT, NULL);
+    if (NULL == response_schema)
+        goto END;
+
 	ret_val = LSMessageReply(lsHandle, lsMessage, jvalue_tostring(reply,
 	                         response_schema), &g_lsError);
 	if (!ret_val)
@@ -2248,13 +2250,16 @@ static bool backup_logs_ls(LSHandle *lsHandle, LSMessage *lsMessage, void *wd)
 		PmLogWarning(g_context, "LSREPLY_ERROR", 1, PMLOGKS("ErrorText",
 		             g_lsError.message), "");
 	}
-
+END :
 	LSMessageUnref(lsMessage);
 	j_release(&reply);
 	LSErrorFree(&g_lsError);
 	g_free(tar_cmd);
-
-	return (ret_val != 0);
+    if(response_schema)
+    {
+        jschema_release(&response_schema);
+    }
+    return ret_val;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -2285,7 +2290,7 @@ errorText | no | String | Error text
 static bool force_rotate_ls(LSHandle *lsHandle, LSMessage *lsMessage, void *wd)
 {
 
-	bool          ret_val;
+	bool          ret_val = true;
 	PmLogFile_t  *logFileP;
 	jvalue_ref    reply = NULL;
 	jschema_ref   response_schema = NULL;
@@ -2307,7 +2312,9 @@ static bool force_rotate_ls(LSHandle *lsHandle, LSMessage *lsMessage, void *wd)
 		            jstring_create("Log rotation failed"));
 	}
 
-	response_schema = jschema_parse(j_cstr_to_buffer("{}"), DOMOPT_NOOPT, NULL);
+    response_schema = jschema_parse(j_cstr_to_buffer("{}"), DOMOPT_NOOPT, NULL);
+    if (NULL == response_schema)
+        goto END;
 
 	ret_val = LSMessageReply(lsHandle, lsMessage, jvalue_tostring(reply,
 	                         response_schema), &g_lsError);
@@ -2318,11 +2325,15 @@ static bool force_rotate_ls(LSHandle *lsHandle, LSMessage *lsMessage, void *wd)
 		           g_lsError.message), "");
 	}
 
+END :
 	LSMessageUnref(lsMessage);
 	j_release(&reply);
 	LSErrorFree(&g_lsError);
-
-	return (ret_val != 0);
+    if(response_schema)
+    {
+        jschema_release(&response_schema);
+    }
+    return ret_val;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -2910,6 +2921,7 @@ static gboolean LoadWhitelist(const char *filename, GError **error)
             }
         }
         g_free(rawwhitelist);
+        g_strfreev(whitelist_buffer);
     }
     else
     {
