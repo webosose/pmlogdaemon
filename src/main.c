@@ -418,14 +418,14 @@ static gboolean CompressFile(gpointer userdata)
 		           PMLOGKS("ErrorText", strerror(err)),
 		           "Failed to remove source file after compression");
 	}
-
-	PmLogDebug(g_context,
-	           "CompressFile: Read %lu bytes, Wrote %lu bytes, Compression factor %4.2f%%\n",
-	           total_read, total_written,
-	           (1.0 - (double)total_written / (double)total_read) * 100.0);
-
+	if (0 != total_read)
+	{
+		PmLogDebug(g_context,
+			"CompressFile: Read %lu bytes, Wrote %lu bytes, Compression factor %4.2f%%\n",
+			total_read, total_written,
+			(1.0 - (double)total_written / (double)total_read) * 100.0);
+	}
 	result = true;
-
 Error:
 	g_free(infilename);
 
