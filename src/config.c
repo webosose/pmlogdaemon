@@ -26,7 +26,6 @@
 
 #include "main.h"
 
-#include <ctype.h>
 #include <libgen.h>
 
 #include <glib.h>
