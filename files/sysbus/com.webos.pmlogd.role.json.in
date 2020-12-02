@@ -1,12 +1,13 @@
 {
-	"exeName":"@WEBOS_INSTALL_SBINDIR@/PmLogDaemon",
-	"type": "regular",
-	"allowedNames": ["com.webos.pmlogd"],
-	"permissions":
-	[
-		{
-			"service":"com.webos.pmlogd",
-			"outbound":["com.webos.service.config", "com.webos.settingsservice"]
-		}
-	]
+    "exeName":"@WEBOS_INSTALL_SBINDIR@/PmLogDaemon",
+    "trustLevel" : ["oem"],
+    "type": "regular",
+    "allowedNames": ["com.webos.pmlogd"],
+    "permissions":
+    [
+        {
+            "service":"com.webos.pmlogd",
+            "outbound":["com.webos.service.config", "com.webos.settingsservice", "com.webos.service.sdx", "com.webos.service.attachedstoragemanager", "com.webos.service.tvpower"]
+        }
+    ]
 }
