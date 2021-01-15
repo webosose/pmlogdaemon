@@ -1,4 +1,4 @@
 {
-    "allowedNames" : [],
+    "allowedNames" : ["com.webos.pmlogd"],
     "diagnostics.logging" : ["oem"]
 }
