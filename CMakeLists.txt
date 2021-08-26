@@ -1,4 +1,4 @@
-# Copyright (c) 2011-2018 LG Electronics, Inc.
+# Copyright (c) 2011-2021 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -42,11 +42,6 @@ webos_add_compiler_flags(ALL ${PMLOGLIB_CFLAGS_OTHER})
 pkg_check_modules(PMLOGLIB_PRV REQUIRED PmLogLib-private)
 include_directories(${PMLOGLIB_PRV_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${PMLOGLIB_PRV_CFLAGS_OTHER})
-
-# Check that we have librdx
-pkg_check_modules(LIBRDX REQUIRED rdx)
-include_directories(${LIBRDX_INCLUDE_DIRS})
-webos_add_compiler_flags(ALL ${LIBRDX_CFLAGS_OTHER})
 
 # Check that we have libpbnjson
 pkg_check_modules(PBNJSON_C REQUIRED pbnjson_c>=2.11.0)

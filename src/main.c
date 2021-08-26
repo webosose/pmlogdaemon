@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2019 LG Electronics, Inc.
+// Copyright (c) 2007-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,7 +55,6 @@
 #include <zlib.h>
 #include <glib.h>
 #include <glib/gstdio.h>
-#include <rdx.h>
 
 #include <pbnjson.h>
 #include <PmLogLibPrv.h>
@@ -891,33 +890,6 @@ static gboolean FreeDiskSpace(gpointer userdata)
 		LogFileKillRotations(&g_logFiles[i], 0);
 	}
 
-	if (usage_out)
-	{
-		RdxReportMetadata md = create_rdx_report_metadata();
-		rdx_report_metadata_set_component(md, "syslog");
-		rdx_report_metadata_set_cause(md, WEBOS_INSTALL_LOGDIR " full");
-		rdx_report_metadata_set_detail(md, WEBOS_INSTALL_LOGDIR " full");
-
-		if (!rdx_make_report(md, usage_out))
-		{
-			/* more aggressive cleanup */
-			PmLogDebug(g_context, "%s: couldn't create low disk space report after clearing logs.. Kill 'em all!\n",
-			           __func__);
-			system("/bin/rm -rf " WEBOS_INSTALL_LOGDIR "/* " WEBOS_INSTALL_LOGDIR "/.*");
-			system("/usr/bin/pkill -SIGHUP rdxd"); /* restart rdxd */
-
-			if (!rdx_make_report(md, usage_out))
-			{
-				PmLogDebug(g_context, "%s: still couldnt make report after nuking " WEBOS_INSTALL_LOGDIR "!\n",
-				           __func__);
-				ret = false;
-			}
-		}
-
-		destroy_rdx_report_metadata(md);
-		g_free(usage_out);
-	}
-
 	return ret;
 }
 
@@ -1544,89 +1516,6 @@ const char *ParseMsgTag(const char *msg)
 	return msg + tagLength;
 }
 
-typedef struct _RdxReportTask
-{
-	int pri;
-	gchar *programName;
-	gchar *msg;
-} RdxReportTask;
-
-RdxReportTask *CreateRdxReportTask(int pri, const char *programName, const char *msg)
-{
-	RdxReportTask *ret = g_new0(RdxReportTask, 1);
-	ret->pri = pri;
-	ret->programName = g_strdup(programName);
-	ret->msg = g_strdup(msg);
-	return ret;
-}
-
-void DeleteRdxReportTask(RdxReportTask *task)
-{
-	g_free(task->programName);
-	task->programName = NULL;
-
-	g_free(task->msg);
-	task->msg = NULL;
-
-	g_free(task);
-}
-
-gboolean RdxLogReport(gpointer userdata)
-{
-	RdxReportTask *task = (RdxReportTask *)userdata;
-
-	RdxReportMetadata md = create_rdx_report_metadata();
-	rdx_report_metadata_set_component(md, "syslog");
-	const char *cause;
-
-	switch ((task->pri & LOG_PRIMASK))
-	{
-		case LOG_EMERG:
-			cause = "LOG_EMERG";
-			break;
-
-		case LOG_ALERT:
-			cause = "LOG_ALERT";
-			break;
-
-		case LOG_CRIT:
-			cause = "LOG_CRIT";
-			break;
-
-		case LOG_ERR:
-			cause = "LOG_ERR";
-			break;
-
-		case LOG_WARNING:
-			cause = "LOG_WARNING";
-			break;
-
-		case LOG_NOTICE:
-			cause = "LOG_NOTICE";
-			break;
-
-		case LOG_INFO:
-			cause = "LOG_INFO";
-			break;
-
-		case LOG_DEBUG:
-			cause = "LOG_DEBUG";
-			break;
-
-		default:
-			cause = "UNKNOWN";
-	}
-
-	rdx_report_metadata_set_cause(md, cause);
-	rdx_report_metadata_set_detail(md, task->programName);
-	rdx_make_report(md, task->msg);
-	destroy_rdx_report_metadata(md);
-
-	DeleteRdxReportTask(task);
-
-	return FALSE;
-}
-
 /**
  * @brief LogMessage
  * Log the message
@@ -1857,29 +1746,6 @@ static void LogMessage(int pri, const char *msg)
 	}
 
 	g_string_free(outMsg, true);
-
-#ifdef RDX_LOG_REPORTING
-	/* RDX report */
-	if ((pri & LOG_PRIMASK) <= LOG_CRIT)
-	{
-		const char *black_list[] = { "rdxd", "uploadd", "pmsyslogd", "upstart", NULL };
-
-		for (int i = 0; black_list[i] != NULL; i++)
-		{
-			if (strcmp(black_list[i], programName) == 0)
-			{
-				return;
-			}
-		}
-
-		HeavyOperationRoutineAdd(&heavy_routine,
-		                         RdxLogReport,
-		                         CreateRdxReportTask(pri, programName, msg),
-		                         CreateRdxReportType,
-		                         NULL);
-	}
-
-#endif
 }
 
 /**
