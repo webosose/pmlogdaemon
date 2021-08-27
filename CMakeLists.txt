@@ -92,7 +92,6 @@ target_link_libraries(PmLogDaemon
                      ${GLIB2_LDFLAGS}
                      ${PMLOGLIB_LDFLAGS}
                      ${PMLOGLIB_PRV_LDFLAGS}
-                     ${LIBRDX_LDFLAGS}
                      ${PBNJSON_C_LDFLAGS}
                      ${ZLIB_LIBRARIES}
                      ${LUNASERVICE2_LDFLAGS}
