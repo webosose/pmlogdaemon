@@ -92,18 +92,23 @@ void HeavyOperationRoutineAdd(HeavyOperationRoutine* self,
 		}
 
 		HeavyOperation *op =g_new(HeavyOperation, 1);
-		op->type         = op_type;
-		op->opaque       = op_opaque;
-		op->routine_func = op_routine;
+		if (op != NULL) {
+			op->type         = op_type;
+			op->opaque       = op_opaque;
+			op->routine_func = op_routine;
+		}
+
 
 		if (op_merge_func)
 		{
-			self->last_operation[op_type] = op;
+			self->last_operation[(unsigned)op_type] = op;
 		}
 
 		RoutineOpaque *opaque = g_new(RoutineOpaque, 1);
-		opaque->op = op;
-		opaque->self = self;
+		if (opaque != NULL) {
+			opaque->op = op;
+			opaque->self = self;
+		}
 
 		WorkerRoutineAddTimerEvent(&self->routine, 0, HeavyOperationFunc, opaque);
 	} while (FALSE);

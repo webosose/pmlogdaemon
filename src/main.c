@@ -1398,10 +1398,12 @@ static gchar *MakeMessageTimestamp()
 
 
 		timeStamp = g_string_sized_new(50);
-		g_string_printf(timeStamp,
-		                "%04d-%02d-%02dT%02d:%02d:%02d%sZ",
-		                1900 + nowTm.tm_year, 1 + nowTm.tm_mon, nowTm.tm_mday,
-		                nowTm.tm_hour, nowTm.tm_min, nowTm.tm_sec, fracSecStr);
+		if (timeStamp != NULL) {
+			g_string_printf(timeStamp,
+					"%04d-%02d-%02dT%02d:%02d:%02d%sZ",
+					1900 + nowTm.tm_year, 1 + nowTm.tm_mon, nowTm.tm_mday,
+					nowTm.tm_hour, nowTm.tm_min, nowTm.tm_sec, fracSecStr);
+		}
 	}
 	else
 	{
@@ -1420,7 +1422,8 @@ static gchar *MakeMessageTimestamp()
 
 		if (res != -1)
 		{
-			g_string_append_printf(timeStamp, " [%ld.%09ld]", ts.tv_sec, ts.tv_nsec);
+			if (timeStamp != NULL)  //coverity
+				g_string_append_printf(timeStamp, " [%ld.%09ld]", ts.tv_sec, ts.tv_nsec);
 		}
 	}
 
@@ -1459,6 +1462,8 @@ gboolean FlushNotMe(gpointer key, gpointer value, gpointer data)
 		{
 
 			gchar *timeStamp = MakeMessageTimestamp();
+			if (timeStamp == NULL) return FALSE; //coverity
+
 			char            priStr[ 20 ];
 			/* look up facility + priority name from pri */
 			FormatPri(LOG_SYSLOG | LOG_INFO, priStr, sizeof(priStr));
@@ -1476,6 +1481,8 @@ gboolean FlushNotMe(gpointer key, gpointer value, gpointer data)
 			RBFlush(keyContextP->rb, FlushMessage, keyContextP);
 
 			timeStamp = MakeMessageTimestamp();
+			if (timeStamp == NULL) return FALSE; // coverity
+
 			outMsg = g_strdup_printf("%s %s pmsyslogd: {%s}: ------ Done flushing ------\n",
 			                         timeStamp,
 			                         priStr,
@@ -1529,6 +1536,8 @@ static void LogMessage(int pri, const char *msg)
 	gchar          *timeStamp = NULL;
 	char            priStr[ 20 ];
 	GString        *outMsg = g_string_sized_new(MAXLINE + 1);
+	if (outMsg == NULL) // forr coverity
+		return;
 	char            msgProgram[ MAX_MSG_LEN ];
 	char            programName[ PMLOG_PROGRAM_MAX_NAME_LENGTH + 1 ];
 	char            contextName[ PMLOG_MAX_CONTEXT_NAME_LEN + 1 ];
@@ -1539,6 +1548,10 @@ static void LogMessage(int pri, const char *msg)
 	size_t          size;
 
 	timeStamp = MakeMessageTimestamp();
+	if (timeStamp == NULL) {
+		g_string_free(outMsg, true);
+		return; //coverity
+	}
 
 	/*
 	 * Remove timestamp prefix if present. Local messages should have this, remote may not.
@@ -1566,7 +1579,8 @@ static void LogMessage(int pri, const char *msg)
 	/* look up facility + priority name from pri */
 	FormatPri(pri, priStr, sizeof(priStr));
 
-	g_string_printf(outMsg, "%s %s ", timeStamp, priStr);
+	if (outMsg != NULL)
+		g_string_printf(outMsg, "%s %s ", timeStamp, priStr);
 
 	g_free(timeStamp);
 
@@ -1710,22 +1724,31 @@ static void LogMessage(int pri, const char *msg)
 						contextConfP->contextName,
 						priStr);
 				g_free(timeStamp);
-				OutputMessage(contextConfP, pri, "pmsyslogd", flushMsg);
+				if (flushMsg != NULL) { //coverity
+					OutputMessage(contextConfP, pri, "pmsyslogd", flushMsg);
 
-				/* Flush */
-				RBFlush(contextConfP->rb, FlushMessage, contextConfP);
-				OutputMessage(contextConfP, pri, programName, outMsg->str);
-				g_free(flushMsg);
+					/* Flush */
+					RBFlush(contextConfP->rb, FlushMessage, contextConfP);
+					OutputMessage(contextConfP, pri, programName, outMsg->str);
+					g_free(flushMsg);
+				}
 
 				timeStamp = MakeMessageTimestamp();
+				if (timeStamp == NULL) { // coverity
+					g_string_free(outMsg, true);
+					return;
+				}
+
 				flushMsg =
 					g_strdup_printf("%s %s pmsyslogd: {%s}: ------ Done flushing ------\n",
 						timeStamp,
 						priStr2,
 						contextConfP->contextName);
-				OutputMessage(contextConfP, pri, "pmsyslogd", flushMsg);
+				if (flushMsg != NULL) { // coverity
+					OutputMessage(contextConfP, pri, "pmsyslogd", flushMsg);
+					g_free(flushMsg);
+				}
 				g_free(timeStamp);
-				g_free(flushMsg);
 
 			}
 			else
@@ -1978,8 +2001,10 @@ LogFileKillRotations(PmLogFile_t *logFileP, int start)
 		                       g_strdup_printf(PMLOGDAEMON_FILE_ROTATION_PATTERN, logFileP->path, r - 1) :
 		                       g_strdup(logFileP->path);
 
-		g_remove(rotation_file);
-		g_free(rotation_file);
+		if (rotation_file != NULL) { // coverity
+			g_remove(rotation_file);
+			g_free(rotation_file);
+		}
 	}
 }
 
