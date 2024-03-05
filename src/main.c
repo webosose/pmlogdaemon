@@ -2547,6 +2547,7 @@ gboolean InitializeSysLogReader(gpointer user_data)
     memset(&sunx, 0, sizeof(sunx));
     sunx.sun_family = AF_UNIX;
     (void) strncpy(sunx.sun_path, g_pathLog, sizeof(sunx.sun_path) - 1);
+    sunx.sun_path[sizeof(sunx.sun_path)-1] = 0; //for coverity
 
     sock_fd = socket(AF_UNIX, SOCK_DGRAM, 0);
 
