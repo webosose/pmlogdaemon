@@ -42,11 +42,12 @@
 
 #include <ctype.h>
 #include <errno.h>
-#include <linux/inotify.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/inotify.h>
 #include <sys/socket.h>
 #include <sys/syslog.h>
 #include <sys/time.h>
