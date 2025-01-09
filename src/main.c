@@ -1412,7 +1412,14 @@ static gchar *MakeMessageTimestamp()
 		 * Generate the timestamp. ctime => "Wed Jun 30 21:49:08 1993\n"
 		 * Note: glibc uses strftime "%h %e %T" using C locale
 		 */
-		timeStamp = g_string_new_len(ctime(&now) + 4, 15);
+		const char *current_time_str = ctime(&now);
+
+		if (current_time_str != NULL) {
+			// Skip the first 4 characters to remove the day of the week
+			timeStamp = g_string_new_len(current_time_str + 4, 15);
+		} else {
+			timeStamp = g_string_new_len("Invalid timestamp", 15);
+		}
 	}
 
 	/* append the monotonic time */
@@ -2029,6 +2036,20 @@ static void LogFileInit(PmLogFile_t *logFileP, const PmLogFile_t *confP)
 	LogFileKillRotations(logFileP, logFileP->rotations + 1);
 }
 
+bool isValidMessage(const char *message, int length)
+{
+	if (length <= 0 || length > MAXLINE) {
+		return false; // Invalid length
+	}
+
+	for (int i = 0; i < length; i++) {
+		unsigned char c = (unsigned char)message[i]; // Ensure safe type conversion
+		if (c < 32 || c > 126) { // Printable ASCII range
+			return false;
+		}
+	}
+	return true; // Valid message
+}
 
 /**
  * @brief HandleNewLog
@@ -2060,9 +2081,15 @@ gboolean HandleNewLog(GIOChannel *source, GIOCondition condition,
 			goto error;
 		}
 
-		if (bytes)
+		if (bytes > 0)
 		{
 			buff[bytes] = '\0';
+			if (!isValidMessage(buff, bytes))
+			{
+				DbgPrint("%s: Invalid message received", __FUNCTION__);
+				goto error;
+
+			}
 			#ifdef PMLOGDAEMON_ENABLE_LOGGING
 			ProcessMessage(buff, (int)bytes);
 			#endif
